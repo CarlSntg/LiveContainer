@@ -11,9 +11,6 @@ import UniformTypeIdentifiers
 struct LCAppGridView: View {
     let apps: [LCAppModel]
     let delegate: LCAppBannerDelegate
-    /// Show placeholder icons instead of the apps (locked hidden apps).
-    var showSkeleton: Bool = false
-    var onSkeletonTap: (() -> Void)? = nil
 
     @EnvironmentObject private var sortManager: LCAppSortManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -49,37 +46,15 @@ struct LCAppGridView: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: rowSpacing) {
             ForEach(apps, id: \.self) { app in
-                if showSkeleton {
-                    skeletonCell
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onSkeletonTap?()
-                        }
-                } else {
-                    LCAppBanner(appModel: app, delegate: delegate, style: .icon(size: iconSize))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: cellHeight)
-                        // Leave an empty slot where the dragged icon was, like the home screen.
-                        .opacity(sortManager.draggingApp == app ? 0 : 1)
-                        .onDrop(of: [UTType.plainText], delegate: LCAppGridDropDelegate(target: app, sortManager: sortManager))
-                }
+                LCAppBanner(appModel: app, delegate: delegate, style: .icon(size: iconSize))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: cellHeight)
+                    // Leave an empty slot where the dragged icon was, like the home screen.
+                    .opacity(sortManager.draggingApp == app ? 0 : 1)
+                    .onDrop(of: [UTType.plainText], delegate: LCAppGridDropDelegate(target: app, sortManager: sortManager))
             }
         }
         .padding(.horizontal, horizontalPadding)
-    }
-
-    private var skeletonCell: some View {
-        VStack(spacing: LCAppIconRootView.labelSpacing) {
-            RoundedRectangle(cornerRadius: iconSize * LCAppIconRootView.cornerRadiusRatio, style: .continuous)
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: iconSize, height: iconSize)
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: iconSize * 0.8, height: 10)
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: cellHeight)
     }
 }
 

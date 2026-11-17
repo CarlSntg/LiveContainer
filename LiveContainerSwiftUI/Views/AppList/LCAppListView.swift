@@ -80,6 +80,10 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     
     @AppStorage("LCMultitaskMode", store: LCUtils.appGroupUserDefault) var multitaskMode: MultitaskMode = .virtualWindow
     @AppStorage("darkModeIcon", store: LCUtils.appGroupUserDefault) private var darkModeIcon = false
+    // Home Screen layout options (Settings > Home Screen).
+    @AppStorage("LCHomeScreenHideTitle", store: LCUtils.appGroupUserDefault) private var homeScreenHideTitle = true
+    @AppStorage("LCHomeScreenAnchorBottom", store: LCUtils.appGroupUserDefault) private var homeScreenAnchorBottom = true
+    @AppStorage("LCHomeScreenHideSearch", store: LCUtils.appGroupUserDefault) private var homeScreenHideSearch = true
     
     @State private var isViewAppeared = false
     /// Visible height of the app list, used to anchor the home screen grid to the bottom.
@@ -91,6 +95,10 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     var isHomeScreenLayout: Bool {
         return sharedAppSortManager.appSortType == .homeScreen
     }
+
+    var hidesTitle: Bool { isHomeScreenLayout && homeScreenHideTitle }
+    var anchorsToBottom: Bool { isHomeScreenLayout && homeScreenAnchorBottom }
+    var hidesSearch: Bool { isHomeScreenLayout && homeScreenHideSearch }
 
     var sortedApps: [LCAppModel] {
         return sharedAppSortManager.sortedApps
@@ -185,7 +193,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                                     .foregroundStyle(.gray)
                             }
                         }
-                    } else if sharedModel.hiddenApps.count > 0 {
+                    } else if sharedModel.hiddenApps.count > 0 && (!isHomeScreenLayout || sharedModel.isHiddenAppUnlocked) {
+                        // In the home screen layout, locked hidden apps are fully hidden (no header, no placeholders).
                         LazyVStack {
                             HStack {
                                 Text("lc.appList.hiddenApps".loc)
@@ -193,15 +202,9 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                                 Spacer()
                             }
                             if isHomeScreenLayout {
-                                LCAppGridView(
-                                    apps: filteredHiddenApps,
-                                    delegate: self,
-                                    showSkeleton: !sharedModel.isHiddenAppUnlocked,
-                                    onSkeletonTap: { Task { await authenticateUser() } }
-                                )
-                                .padding(.horizontal, -16)
-                                .padding(.top, 8)
-                                .animation(.easeInOut, value: sharedModel.isHiddenAppUnlocked)
+                                LCAppGridView(apps: filteredHiddenApps, delegate: self)
+                                    .padding(.horizontal, -16)
+                                    .padding(.top, 8)
                             } else {
                                 ForEach(filteredHiddenApps, id: \.self) { app in
                                     if sharedModel.isHiddenAppUnlocked {
@@ -239,7 +242,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 }
                 // Home screen layout: fill at least the visible area and sit the icons at the bottom,
                 // within thumb reach. Taller content just scrolls as usual.
-                .frame(minHeight: isHomeScreenLayout ? scrollViewHeight : 0, alignment: .bottom)
+                // Always fill the screen in this layout so the empty space is there for the triple-tap unlock.
+                .frame(minHeight: isHomeScreenLayout ? scrollViewHeight : 0, alignment: anchorsToBottom ? .bottom : .top)
                 .background(
                     Group {
                         if isHomeScreenLayout {
@@ -271,8 +275,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 }
             }
             
-            .navigationTitle(isHomeScreenLayout ? "" : "lc.appList.myApps".loc)
-            .navigationBarTitleDisplayMode(isHomeScreenLayout ? .inline : .automatic)
+            .navigationTitle(hidesTitle ? "" : "lc.appList.myApps".loc)
+            .navigationBarTitleDisplayMode(hidesTitle ? .inline : .automatic)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if sharedModel.multiLCStatus != 2 {
@@ -330,7 +334,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                             if sharedAppSortManager.appSortType == .custom {
                                 customSortViewPresent = true
                             }
-                            if newValue == .homeScreen {
+                            if newValue == .homeScreen && homeScreenHideSearch {
                                 // The search bar is hidden in this layout, so don't leave a filter applied.
                                 searchContext.query = ""
                             }
@@ -497,7 +501,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             }
         }
         .apply { view in
-            if isHomeScreenLayout {
+            if hidesSearch {
                 view
             } else {
                 view.searchable(text: $searchContext.query)
