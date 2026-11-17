@@ -22885,6 +22885,61 @@
         }
       }
     },
+    "lc.settings.homeScreen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Screen"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.anchorBottom" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anchor Apps to Bottom"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.desc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These options apply when the app list is sorted by Home Screen."
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.hideSearch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Search Bar"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.hideTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide \"My Apps\" Title"
+          }
+        }
+      }
+    },
     "lc.settings.interface" : {
       "extractionState" : "manual",
       "localizations" : {

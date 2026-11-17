@@ -53,6 +53,9 @@ struct LCSettingsView: View {
     @AppStorage("LCStrictHiding", store: LCUtils.appGroupUserDefault) var strictHiding = false
     @AppStorage("dynamicColors", store: LCUtils.appGroupUserDefault) var dynamicColors = true
     @AppStorage("darkModeIcon", store: LCUtils.appGroupUserDefault) var darkModeIcon = false
+    @AppStorage("LCHomeScreenHideTitle", store: LCUtils.appGroupUserDefault) var homeScreenHideTitle = true
+    @AppStorage("LCHomeScreenAnchorBottom", store: LCUtils.appGroupUserDefault) var homeScreenAnchorBottom = true
+    @AppStorage("LCHomeScreenHideSearch", store: LCUtils.appGroupUserDefault) var homeScreenHideSearch = true
     
     @AppStorage("LCSideJITServerAddress", store: LCUtils.appGroupUserDefault) var sideJITServerAddress : String = ""
     @AppStorage("LCDeviceUDID", store: LCUtils.appGroupUserDefault) var deviceUDID: String = ""
@@ -215,6 +218,21 @@ struct LCSettingsView: View {
                     Text("lc.settings.interface".loc)
                 } footer: {
                     Text("lc.settings.dynamicColors.desc".loc)
+                }
+                Section {
+                    Toggle(isOn: $homeScreenHideTitle) {
+                        Text("lc.settings.homeScreen.hideTitle".loc)
+                    }
+                    Toggle(isOn: $homeScreenAnchorBottom) {
+                        Text("lc.settings.homeScreen.anchorBottom".loc)
+                    }
+                    Toggle(isOn: $homeScreenHideSearch) {
+                        Text("lc.settings.homeScreen.hideSearch".loc)
+                    }
+                } header: {
+                    Text("lc.settings.homeScreen".loc)
+                } footer: {
+                    Text("lc.settings.homeScreen.desc".loc)
                 }
                 Section{
                     Toggle(isOn: $frameShortIcon) {
