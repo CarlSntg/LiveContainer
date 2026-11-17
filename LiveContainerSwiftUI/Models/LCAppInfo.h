@@ -28,6 +28,7 @@ typedef NS_ENUM(NSInteger, MultitaskSpecified){
 @property (nonatomic, readonly) NSUInteger defaultClassicMode;
 @property bool isLocked;
 @property bool isHidden;
+@property bool isHiddenFromAppList;
 @property bool doSymlinkInbox;
 @property bool hideLiveContainer;
 @property bool dontLoadTweakLoader;

@@ -236,6 +236,17 @@ final class LCAppBannerViewController: UIViewController, UIContextMenuInteractio
         )
         sectionChildren.append(addToHomeScreenMenu)
 
+        // Hide from / show in the Apps tab only (no locking). Not offered for locked hidden apps.
+        if !model.uiIsHidden {
+            let isHiddenFromAppList = model.uiIsHiddenFromAppList
+            sectionChildren.append(UIAction(
+                title: isHiddenFromAppList ? "lc.appBanner.showInAppList".loc : "lc.appBanner.hideFromAppList".loc,
+                image: UIImage(systemName: isHiddenFromAppList ? "eye" : "eye.slash")
+            ) { _ in
+                model.uiIsHiddenFromAppList = !isHiddenFromAppList
+            })
+        }
+
         sectionChildren.append(UIAction(
             title: "lc.tabView.settings".loc,
             image: UIImage(systemName: "gear")

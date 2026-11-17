@@ -545,7 +545,16 @@
 - (void)setIsHidden:(bool)isHidden {
     _info[@"isHidden"] = [NSNumber numberWithBool:isHidden];
     [self save];
-    
+
+}
+
+// Only hides the app from the Apps tab; it stays unlocked and launchable (URL scheme, shortcuts, other apps).
+- (bool)isHiddenFromAppList {
+    return [_info[@"isHiddenFromAppList"] boolValue];
+}
+- (void)setIsHiddenFromAppList:(bool)isHiddenFromAppList {
+    _info[@"isHiddenFromAppList"] = [NSNumber numberWithBool:isHiddenFromAppList];
+    [self save];
 }
 
 - (bool)doSymlinkInbox {

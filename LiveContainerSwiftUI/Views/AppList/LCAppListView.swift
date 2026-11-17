@@ -74,6 +74,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     @State private var helpPresent = false
     
     @State private var customSortViewPresent = false
+    /// Temporarily reveal apps hidden from the list (dimmed) so they can be managed or unhidden.
+    @State private var showAppsHiddenFromList = false
     
     @EnvironmentObject private var sharedModel : SharedModel
     @EnvironmentObject private var sharedAppSortManager : LCAppSortManager
@@ -108,10 +110,15 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         return sharedAppSortManager.sortedHiddenApps
     }
     
+    var hasAppsHiddenFromList: Bool {
+        sortedApps.contains { $0.uiIsHiddenFromAppList }
+    }
+
     var filteredApps: [LCAppModel] {
         let apps = sortedApps
         if searchContext.debouncedQuery.isEmpty {
-            return apps
+            // Apps hidden from the list are left out unless revealed; searching still finds them.
+            return showAppsHiddenFromList ? apps : apps.filter { !$0.uiIsHiddenFromAppList }
         } else {
             return apps.filter { app in
                 app.appInfo.displayName().localizedCaseInsensitiveContains(searchContext.debouncedQuery) ||
@@ -155,6 +162,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                     LazyVStack {
                         ForEach(filteredApps, id: \.self) { app in
                             LCAppBanner(appModel: app, delegate: self)
+                                .opacity(app.uiIsHiddenFromAppList ? 0.5 : 1)
                         }
                         .transition(.scale)
                     }
@@ -226,7 +234,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                     let appCount = sharedModel.isHiddenAppUnlocked ? filteredApps.count + filteredHiddenApps.count : filteredApps.count
                     // The home screen layout drops the "N apps in total" footer (the empty-list tip still shows).
                     if !(isHomeScreenLayout && appCount > 0) {
-                        Text(appCount > 0 || searchContext.debouncedQuery != "" ? "lc.appList.appCounter %lld".localizeWithFormat(appCount) : (sharedModel.multiLCStatus == 2 ? "lc.appList.convertToSharedToShowInLC2".loc : "lc.appList.installTip".loc))
+                        Text(appCount > 0 || searchContext.debouncedQuery != "" || hasAppsHiddenFromList ? "lc.appList.appCounter %lld".localizeWithFormat(appCount) : (sharedModel.multiLCStatus == 2 ? "lc.appList.convertToSharedToShowInLC2".loc : "lc.appList.installTip".loc))
                             .padding(.horizontal)
                             .foregroundStyle(.gray)
                             .animation(searchContext.isTyping ? nil : .easeInOut, value: appCount)
@@ -346,6 +354,13 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                                 customSortViewPresent = true
                             } label: {
                                 Label("lc.appList.sort.customManage".loc, systemImage: "slider.horizontal.3")
+                            }
+                        }
+                        if hasAppsHiddenFromList || showAppsHiddenFromList {
+                            Divider()
+
+                            Toggle(isOn: $showAppsHiddenFromList.animation()) {
+                                Label("lc.appList.showAppsHiddenFromList".loc, systemImage: "eye")
                             }
                         }
                     } label: {

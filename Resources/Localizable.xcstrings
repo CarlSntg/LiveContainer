@@ -810,6 +810,17 @@
         }
       }
     },
+    "lc.appBanner.hideFromAppList" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide from App List"
+          }
+        }
+      }
+    },
     "lc.appBanner.jitLaunchNow" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1412,6 +1423,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存應用程式圖像"
+          }
+        }
+      }
+    },
+    "lc.appBanner.showInAppList" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in App List"
           }
         }
       }
@@ -4732,6 +4754,17 @@
         }
       }
     },
+    "lc.appList.showAppsHiddenFromList" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Apps Hidden from List"
+          }
+        }
+      }
+    },
     "lc.appList.signSuccessWithError" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7661,6 +7694,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "要完全隱藏應用程式，請在設定中啟用嚴格隱藏模式。"
+          }
+        }
+      }
+    },
+    "lc.appSettings.hideFromAppList" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide from App List"
+          }
+        }
+      }
+    },
+    "lc.appSettings.hideFromAppListDesc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removes the app from the Apps tab without locking it. It can still be launched by URL scheme, shortcuts and other apps, and still shows up when searching. Use \"Show Apps Hidden from List\" in the sort menu to reveal it again."
           }
         }
       }
