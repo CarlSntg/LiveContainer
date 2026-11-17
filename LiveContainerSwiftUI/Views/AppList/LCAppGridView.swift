@@ -50,7 +50,8 @@ struct LCAppGridView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: cellHeight)
                     // Leave an empty slot where the dragged icon was, like the home screen.
-                    .opacity(sortManager.draggingApp == app ? 0 : 1)
+                    // Apps hidden from the list only show up here when revealed; dim them.
+                    .opacity(sortManager.draggingApp == app ? 0 : (app.uiIsHiddenFromAppList ? 0.5 : 1))
                     .onDrop(of: [UTType.plainText], delegate: LCAppGridDropDelegate(target: app, sortManager: sortManager))
             }
         }

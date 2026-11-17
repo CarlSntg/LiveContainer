@@ -219,6 +219,14 @@ struct LCAppSettingsView: View {
             }
 
             Section {
+                Toggle(isOn: $model.uiIsHiddenFromAppList) {
+                    Text("lc.appSettings.hideFromAppList".loc)
+                }
+            } footer: {
+                Text("lc.appSettings.hideFromAppListDesc".loc)
+            }
+
+            Section {
                 Toggle(isOn: $model.uiIsLocked) {
                     Text("lc.appSettings.lockApp".loc)
                 }

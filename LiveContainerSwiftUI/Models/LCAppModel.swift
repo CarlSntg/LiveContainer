@@ -35,6 +35,15 @@ class LCAppModel: ObservableObject, Hashable {
     }
     @Published var uiIsHidden : Bool
     @Published var uiIsLocked : Bool
+    /// Hidden from the Apps tab only; unlike `uiIsHidden` this doesn't lock the app or restrict launching it.
+    @Published var uiIsHiddenFromAppList : Bool {
+        didSet {
+            guard oldValue != uiIsHiddenFromAppList else { return }
+            appInfo.isHiddenFromAppList = uiIsHiddenFromAppList
+            // The app list observes SharedModel, not each app, so poke it to re-filter.
+            DataManager.shared.model.objectWillChange.send()
+        }
+    }
     @Published var uiIsShared : Bool
     @Published var uiDefaultDataFolder : String?
     @Published var uiContainers : [LCContainer]
@@ -182,6 +191,7 @@ class LCAppModel: ObservableObject, Hashable {
         self.uiClassicMode = appInfo.classicMode
         self.uiIsHidden = appInfo.isHidden
         self.uiIsLocked = appInfo.isLocked
+        self.uiIsHiddenFromAppList = appInfo.isHiddenFromAppList
         self.uiIsShared = appInfo.isShared
         self.uiSelectedLanguage = appInfo.selectedLanguage ?? ""
         self.uiDefaultDataFolder = appInfo.dataUUID
@@ -554,6 +564,7 @@ class LCAppModel: ObservableObject, Hashable {
         toAppInfo.autoSaveDisabled = true
         toAppInfo.isLocked = fromApp.appInfo.isLocked
         toAppInfo.isHidden = fromApp.appInfo.isHidden
+        toAppInfo.isHiddenFromAppList = fromApp.appInfo.isHiddenFromAppList
         toAppInfo.isShared = fromApp.appInfo.isShared
         
         toAppInfo.containerInfo = fromApp.appInfo.containerInfo
