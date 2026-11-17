@@ -11,32 +11,51 @@ struct LCAppBannerConfiguration {
     let model: LCAppModel
     let dynamicColors: Bool
     let darkModeIcon: Bool
+    var style: LCAppBannerStyle = .banner
 }
 
 
-final class LCAppBannerViewController: UIViewController, UIContextMenuInteractionDelegate, UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate {
-        
+final class LCAppBannerViewController: UIViewController, UIContextMenuInteractionDelegate, UIDragInteractionDelegate, UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate {
+
     private let delegate: LCAppBannerDelegate
-    private let bannerView = LCAppBannerRootView()
+    /// Fixed for the lifetime of the controller; decides which root view is used.
+    private let isIconStyle: Bool
+    private lazy var bannerView = LCAppBannerRootView()
+    private lazy var iconView = LCAppIconRootView()
     private var configuration: LCAppBannerConfiguration
     private var exportTemporaryDirectory: URL?
-    
+
     init(delegate: LCAppBannerDelegate, config: LCAppBannerConfiguration) {
         self.delegate = delegate
         self.configuration = config
+        self.isIconStyle = config.style.isIcon
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     override func loadView() {
-        view = bannerView
+        view = isIconStyle ? iconView : bannerView
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        if isIconStyle {
+            view.backgroundColor = .clear
+            iconView.addInteraction(UIContextMenuInteraction(delegate: self))
+
+            // Long press shows the menu; moving the finger turns it into a drag to rearrange.
+            let dragInteraction = UIDragInteraction(delegate: self)
+            dragInteraction.isEnabled = true
+            iconView.addInteraction(dragInteraction)
+
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(iconTapped))
+            iconView.addGestureRecognizer(tapGesture)
+            return
+        }
 
         preferredContentSize = CGSize(width: 0, height: LCAppBannerRootView.bannerHeight)
         bannerView.runControl.addTarget(self, action: #selector(runButtonTapped), for: .touchUpInside)
@@ -62,18 +81,33 @@ final class LCAppBannerViewController: UIViewController, UIContextMenuInteractio
     func update(
         model: LCAppModel,
         dynamicColors: Bool,
-        darkModeIcon: Bool
+        darkModeIcon: Bool,
+        style: LCAppBannerStyle = .banner
     ) {
         loadViewIfNeeded()
         configuration = LCAppBannerConfiguration(
             model: model,
             dynamicColors: dynamicColors,
-            darkModeIcon: darkModeIcon
+            darkModeIcon: darkModeIcon,
+            style: style
         )
         refreshView()
     }
 
     private func refreshView() {
+        if isIconStyle {
+            var iconSize: CGFloat = 60
+            if case .icon(let size) = configuration.style {
+                iconSize = size
+            }
+            iconView.update(
+                model: configuration.model,
+                appInfo: configuration.model.appInfo,
+                darkModeIcon: configuration.darkModeIcon,
+                iconSize: iconSize
+            )
+            return
+        }
         bannerView.update(
             model: configuration.model,
             appInfo: configuration.model.appInfo,
@@ -89,6 +123,13 @@ final class LCAppBannerViewController: UIViewController, UIContextMenuInteractio
             return
         }
         openSettings()
+    }
+
+    @objc private func iconTapped() {
+        guard !configuration.model.isAppRunning else {
+            return
+        }
+        runButtonTapped()
     }
 
     @objc private func runButtonTapped() {
@@ -229,6 +270,70 @@ final class LCAppBannerViewController: UIViewController, UIContextMenuInteractio
         UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             self?.makeContextMenu()
         }
+    }
+
+    // In icon style, lift just the icon (not the label), like the home screen.
+    private func makeIconTargetedPreview() -> UITargetedPreview? {
+        guard isIconStyle, iconView.window != nil else {
+            return nil
+        }
+        let parameters = UIPreviewParameters()
+        parameters.visiblePath = iconView.iconPreviewPath
+        parameters.backgroundColor = .clear
+        return UITargetedPreview(view: iconView.iconImageView, parameters: parameters)
+    }
+
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration
+    ) -> UITargetedPreview? {
+        makeIconTargetedPreview()
+    }
+
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration
+    ) -> UITargetedPreview? {
+        makeIconTargetedPreview()
+    }
+
+    // MARK: - Drag to rearrange (icon style only)
+
+    func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
+        let model = configuration.model
+        guard isIconStyle,
+              let uniqueId = LCAppSortManager.shared.getUniqueIdentifier(for: model) else {
+            return []
+        }
+        let item = UIDragItem(itemProvider: NSItemProvider(object: uniqueId as NSString))
+        item.localObject = model
+        return [item]
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, previewForLifting item: UIDragItem, session: UIDragSession) -> UITargetedDragPreview? {
+        guard isIconStyle, iconView.window != nil else {
+            return nil
+        }
+        let parameters = UIDragPreviewParameters()
+        parameters.visiblePath = iconView.iconPreviewPath
+        parameters.backgroundColor = .clear
+        return UITargetedDragPreview(view: iconView.iconImageView, parameters: parameters)
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, sessionWillBegin session: UIDragSession) {
+        LCAppSortManager.shared.draggingApp = configuration.model
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession, didEndWith operation: UIDropOperation) {
+        LCAppSortManager.shared.draggingApp = nil
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, sessionIsRestrictedToDraggingApplication session: UIDragSession) -> Bool {
+        true
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, sessionAllowsMoveOperation session: UIDragSession) -> Bool {
+        true
     }
 
     private func openSettings() {

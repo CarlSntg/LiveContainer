@@ -206,7 +206,7 @@ final class ShareExtensionViewModel: ObservableObject {
             .map { $0.0 }
             let undated = regularApps.filter { $0.installationDate == nil }
             sorted = dated + undated
-        case "custom":
+        case "custom", "home_screen":
             sorted = sortByCustomOrder(regularApps)
         default:
             sorted = regularApps
