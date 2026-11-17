@@ -22995,6 +22995,94 @@
         }
       }
     },
+    "lc.settings.homeScreen.adjustWallpaper" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust Wallpaper"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.changeWallpaper" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Wallpaper"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.chooseWallpaper" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Wallpaper"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.removeWallpaper" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Wallpaper"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.wallpaperAdjustHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinch to zoom, drag to move"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.wallpaperDim" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dim Wallpaper"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.wallpaperReset" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
+    },
+    "lc.settings.homeScreen.wallpaperSaveError" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the wallpaper."
+          }
+        }
+      }
+    },
     "lc.settings.interface" : {
       "extractionState" : "manual",
       "localizations" : {

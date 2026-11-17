@@ -57,6 +57,11 @@ final class LCAppIconRootView: UIView {
         nameLabel.numberOfLines = 1
         nameLabel.lineBreakMode = .byTruncatingTail
         nameLabel.isAccessibilityElement = false
+        // A soft shadow keeps light labels readable on a wallpaper; harmless on a plain dark background.
+        nameLabel.layer.shadowColor = UIColor.black.cgColor
+        nameLabel.layer.shadowOffset = CGSize(width: 0, height: 0.5)
+        nameLabel.layer.shadowRadius = 2
+        updateLabelShadow()
 
         signingOverlay.translatesAutoresizingMaskIntoConstraints = false
         signingOverlay.isHidden = true
@@ -92,6 +97,17 @@ final class LCAppIconRootView: UIView {
         isAccessibilityElement = true
         accessibilityTraits = .button
         applyIconSize()
+    }
+
+    private func updateLabelShadow() {
+        nameLabel.layer.shadowOpacity = traitCollection.userInterfaceStyle == .dark ? 0.45 : 0
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
+            updateLabelShadow()
+        }
     }
 
     private func applyIconSize() {
