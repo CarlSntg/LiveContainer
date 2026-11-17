@@ -324,6 +324,23 @@ final class LCAppBannerViewController: UIViewController, UIContextMenuInteractio
         LCAppSortManager.shared.draggingApp = configuration.model
     }
 
+    // Drops are always cancelled (see LCAppGridDropDelegate), so this is the "settle" animation:
+    // send the lifted icon to where this cell is now, i.e. its new slot.
+    func dragInteraction(_ interaction: UIDragInteraction, previewForCancelling item: UIDragItem, withDefault defaultPreview: UITargetedDragPreview) -> UITargetedDragPreview? {
+        guard isIconStyle, iconView.window != nil else {
+            return defaultPreview
+        }
+        let target = UIDragPreviewTarget(container: iconView, center: iconView.iconImageView.center)
+        return defaultPreview.retargetedPreview(with: target)
+    }
+
+    func dragInteraction(_ interaction: UIDragInteraction, item: UIDragItem, willAnimateCancelWith animator: UIDragAnimating) {
+        // Keep the slot empty until the flying icon lands, then show the real one.
+        animator.addCompletion { _ in
+            LCAppSortManager.shared.draggingApp = nil
+        }
+    }
+
     func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession, didEndWith operation: UIDropOperation) {
         LCAppSortManager.shared.draggingApp = nil
     }

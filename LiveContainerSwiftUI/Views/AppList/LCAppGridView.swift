@@ -18,16 +18,28 @@ struct LCAppGridView: View {
     @EnvironmentObject private var sortManager: LCAppSortManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    // iPhone home screen: 60pt icons in 4 columns. iPad: 76pt icons, as many columns as fit.
+    // iPhone values measured from a 402pt-wide home screen: 64pt icons, 4 columns on a
+    // 92.6pt pitch (first icon 30.6pt from the edge), rows on a ~100pt pitch.
+    // iPad: 76pt icons, as many columns as fit.
     private var iconSize: CGFloat {
-        horizontalSizeClass == .regular ? 76 : 60
+        horizontalSizeClass == .regular ? 76 : 64
     }
 
     private var columns: [GridItem] {
         if horizontalSizeClass == .regular {
             return [GridItem(.adaptive(minimum: iconSize + 44, maximum: iconSize + 64), spacing: 16)]
         }
-        return Array(repeating: GridItem(.flexible(), spacing: 12), count: 4)
+        // No gutter: each column is a full pitch wide and the icon sits centered in it.
+        return Array(repeating: GridItem(.flexible(), spacing: 0), count: 4)
+    }
+
+    private var horizontalPadding: CGFloat {
+        horizontalSizeClass == .regular ? 32 : 16
+    }
+
+    private var rowSpacing: CGFloat {
+        // Row pitch of ~100.2pt minus the cell height (icon + gap + label line).
+        horizontalSizeClass == .regular ? 26 : max(100.2 - cellHeight, 0)
     }
 
     private var cellHeight: CGFloat {
@@ -35,7 +47,7 @@ struct LCAppGridView: View {
     }
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 26) {
+        LazyVGrid(columns: columns, spacing: rowSpacing) {
             ForEach(apps, id: \.self) { app in
                 if showSkeleton {
                     skeletonCell
@@ -53,14 +65,12 @@ struct LCAppGridView: View {
                 }
             }
         }
-        .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 20)
-        // Accept drops in the gaps between icons so the icon settles instead of flying back.
-        .onDrop(of: [UTType.plainText], delegate: LCAppGridDropDelegate(target: nil, sortManager: sortManager))
+        .padding(.horizontal, horizontalPadding)
     }
 
     private var skeletonCell: some View {
         VStack(spacing: LCAppIconRootView.labelSpacing) {
-            RoundedRectangle(cornerRadius: iconSize * 0.225, style: .continuous)
+            RoundedRectangle(cornerRadius: iconSize * LCAppIconRootView.cornerRadiusRatio, style: .continuous)
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: iconSize, height: iconSize)
             RoundedRectangle(cornerRadius: 4)
@@ -74,14 +84,16 @@ struct LCAppGridView: View {
 }
 
 /// Moves the dragged app into the slot of the icon it hovers over.
+///
+/// The drop itself is never accepted: the order is saved while hovering, and a cancelled drag
+/// makes UIKit fly the icon back to its source view, which by then sits in the new slot.
+/// That gives the home screen "settle into place" animation instead of the icon vanishing.
 struct LCAppGridDropDelegate: DropDelegate {
-    /// The app whose slot this delegate covers; nil for the grid background.
-    let target: LCAppModel?
+    let target: LCAppModel
     let sortManager: LCAppSortManager
 
     func dropEntered(info: DropInfo) {
-        guard let target,
-              let draggingApp = sortManager.draggingApp,
+        guard let draggingApp = sortManager.draggingApp,
               draggingApp != target else {
             return
         }
@@ -91,12 +103,10 @@ struct LCAppGridDropDelegate: DropDelegate {
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
+        DropProposal(operation: .cancel)
     }
 
     func performDrop(info: DropInfo) -> Bool {
-        // The order is already saved while hovering; just end the drag.
-        sortManager.draggingApp = nil
-        return true
+        false
     }
 }

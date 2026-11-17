@@ -9,7 +9,10 @@ import Foundation
 import UIKit
 
 final class LCAppIconRootView: UIView {
-    static let labelSpacing: CGFloat = 6
+    static let labelSpacing: CGFloat = 5
+    /// Corner radius / icon size. Matches the banner (16pt on 60pt), which lines up with the
+    /// mask iOS already applies to the generated icon, so no image edge peeks out at the corners.
+    static let cornerRadiusRatio: CGFloat = 16.0 / 60.0
     static let labelFont = UIFont.systemFont(ofSize: 12, weight: .regular)
 
     /// Total height of a cell for the given icon size.
@@ -94,8 +97,7 @@ final class LCAppIconRootView: UIView {
     private func applyIconSize() {
         iconWidthConstraint.constant = iconSize
         iconHeightConstraint.constant = iconSize
-        // Matches the iOS home screen icon corner radius ratio.
-        let cornerRadius = iconSize * 0.225
+        let cornerRadius = iconSize * Self.cornerRadiusRatio
         iconImageView.layer.cornerRadius = cornerRadius
         signingOverlay.layer.cornerRadius = cornerRadius
     }
