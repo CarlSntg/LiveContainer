@@ -82,6 +82,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     @AppStorage("darkModeIcon", store: LCUtils.appGroupUserDefault) private var darkModeIcon = false
     
     @State private var isViewAppeared = false
+    /// Visible height of the app list, used to anchor the home screen grid to the bottom.
+    @State private var scrollViewHeight: CGFloat = 0
     
     @ObservedObject var searchContext: SearchContext = SearchContext()
 
@@ -129,6 +131,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     var body: some View {
         NavigationView {
             ScrollView {
+                VStack {
                 NavigationLink(
                     destination: navigateTo,
                     isActive: $isNavigationActive,
@@ -218,20 +221,48 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                     }
 
                     let appCount = sharedModel.isHiddenAppUnlocked ? filteredApps.count + filteredHiddenApps.count : filteredApps.count
-                    Text(appCount > 0 || searchContext.debouncedQuery != "" ? "lc.appList.appCounter %lld".localizeWithFormat(appCount) : (sharedModel.multiLCStatus == 2 ? "lc.appList.convertToSharedToShowInLC2".loc : "lc.appList.installTip".loc))
-                        .padding(.horizontal)
-                        .foregroundStyle(.gray)
-                        .animation(searchContext.isTyping ? nil : .easeInOut, value: appCount)
-                        .onTapGesture(count: 3) {
-                            Task { await authenticateUser() }
-                        }
+                    // The home screen layout drops the "N apps in total" footer (the empty-list tip still shows).
+                    if !(isHomeScreenLayout && appCount > 0) {
+                        Text(appCount > 0 || searchContext.debouncedQuery != "" ? "lc.appList.appCounter %lld".localizeWithFormat(appCount) : (sharedModel.multiLCStatus == 2 ? "lc.appList.convertToSharedToShowInLC2".loc : "lc.appList.installTip".loc))
+                            .padding(.horizontal)
+                            .foregroundStyle(.gray)
+                            .animation(searchContext.isTyping ? nil : .easeInOut, value: appCount)
+                            .onTapGesture(count: 3) {
+                                Task { await authenticateUser() }
+                            }
+                    }
                 }.animation(searchContext.isTyping ? nil : .easeInOut, value: LCUtils.appGroupUserDefault.bool(forKey: "LCStrictHiding"))
 
                 if sharedModel.multiLCStatus == 2 {
                     Text("lc.appList.manageInPrimaryTip".loc).foregroundStyle(.gray).padding()
                 }
+                }
+                // Home screen layout: fill at least the visible area and sit the icons at the bottom,
+                // within thumb reach. Taller content just scrolls as usual.
+                .frame(minHeight: isHomeScreenLayout ? scrollViewHeight : 0, alignment: .bottom)
+                .background(
+                    Group {
+                        if isHomeScreenLayout {
+                            // Triple-tap the empty space to unlock hidden apps (the footer that did this is gone).
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture(count: 3) {
+                                    Task { await authenticateUser() }
+                                }
+                        }
+                    }
+                )
 
             }
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { scrollViewHeight = geometry.size.height }
+                        .onChange(of: geometry.size.height) { newHeight in
+                            scrollViewHeight = newHeight
+                        }
+                }
+            )
             .navigationBarProgressBar(show:$installprogressVisible, progress: $installProgressPercentage)
             .coordinateSpace(name: "scroll")
             .onAppear {
