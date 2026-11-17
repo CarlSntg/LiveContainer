@@ -5214,6 +5214,17 @@
         }
       }
     },
+    "lc.appList.sort.homeScreen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Screen"
+          }
+        }
+      }
+    },
     "lc.appList.sort.installationDate" : {
       "extractionState" : "stale",
       "localizations" : {

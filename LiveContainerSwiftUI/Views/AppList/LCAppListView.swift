@@ -84,6 +84,12 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     @State private var isViewAppeared = false
     
     @ObservedObject var searchContext: SearchContext = SearchContext()
+
+    /// Home screen layout: icon grid, no large title and no search bar.
+    var isHomeScreenLayout: Bool {
+        return sharedAppSortManager.appSortType == .homeScreen
+    }
+
     var sortedApps: [LCAppModel] {
         return sharedAppSortManager.sortedApps
     }
@@ -131,14 +137,19 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 })
                 .hidden()
                 
-                LazyVStack {
-                    ForEach(filteredApps, id: \.self) { app in
-                        LCAppBanner(appModel: app, delegate: self)
+                if isHomeScreenLayout {
+                    LCAppGridView(apps: filteredApps, delegate: self)
+                        .padding(.vertical)
+                } else {
+                    LazyVStack {
+                        ForEach(filteredApps, id: \.self) { app in
+                            LCAppBanner(appModel: app, delegate: self)
+                        }
+                        .transition(.scale)
                     }
-                    .transition(.scale)
+                    .padding()
+                    .animation(searchContext.isTyping ? nil : .easeInOut, value: filteredApps)
                 }
-                .padding()
-                .animation(searchContext.isTyping ? nil : .easeInOut, value: filteredApps)
 
                 VStack {
                     if LCUtils.appGroupUserDefault.bool(forKey: "LCStrictHiding") {
@@ -149,17 +160,23 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                                         .font(.system(.title2).bold())
                                     Spacer()
                                 }
-                                
-                                ForEach(filteredHiddenApps, id: \.self) { app in
-                                    LCAppBanner(appModel: app, delegate: self)
+
+                                if isHomeScreenLayout {
+                                    LCAppGridView(apps: filteredHiddenApps, delegate: self)
+                                        .padding(.horizontal, -16)
+                                        .padding(.top, 8)
+                                } else {
+                                    ForEach(filteredHiddenApps, id: \.self) { app in
+                                        LCAppBanner(appModel: app, delegate: self)
+                                    }
+                                    .transition(.scale)
                                 }
-                                .transition(.scale)
-                                
+
                             }
                             .padding()
                             .transition(.opacity)
                             .animation(searchContext.isTyping ? nil : .easeInOut, value: filteredHiddenApps)
-                            
+
                             if sharedModel.hiddenApps.count == 0 {
                                 Text("lc.appList.hideAppTip".loc)
                                     .foregroundStyle(.gray)
@@ -172,16 +189,28 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                                     .font(.system(.title2).bold())
                                 Spacer()
                             }
-                            ForEach(filteredHiddenApps, id: \.self) { app in
-                                if sharedModel.isHiddenAppUnlocked {
-                                    LCAppBanner(appModel: app, delegate: self)
-                                } else {
-                                    LCAppSkeletonBanner()
+                            if isHomeScreenLayout {
+                                LCAppGridView(
+                                    apps: filteredHiddenApps,
+                                    delegate: self,
+                                    showSkeleton: !sharedModel.isHiddenAppUnlocked,
+                                    onSkeletonTap: { Task { await authenticateUser() } }
+                                )
+                                .padding(.horizontal, -16)
+                                .padding(.top, 8)
+                                .animation(.easeInOut, value: sharedModel.isHiddenAppUnlocked)
+                            } else {
+                                ForEach(filteredHiddenApps, id: \.self) { app in
+                                    if sharedModel.isHiddenAppUnlocked {
+                                        LCAppBanner(appModel: app, delegate: self)
+                                    } else {
+                                        LCAppSkeletonBanner()
+                                    }
                                 }
-                            }
-                            .animation(.easeInOut, value: sharedModel.isHiddenAppUnlocked)
-                            .onTapGesture {
-                                Task { await authenticateUser() }
+                                .animation(.easeInOut, value: sharedModel.isHiddenAppUnlocked)
+                                .onTapGesture {
+                                    Task { await authenticateUser() }
+                                }
                             }
                         }
                         .padding()
@@ -211,7 +240,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 }
             }
             
-            .navigationTitle("lc.appList.myApps".loc)
+            .navigationTitle(isHomeScreenLayout ? "" : "lc.appList.myApps".loc)
+            .navigationBarTitleDisplayMode(isHomeScreenLayout ? .inline : .automatic)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if sharedModel.multiLCStatus != 2 {
@@ -269,8 +299,12 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                             if sharedAppSortManager.appSortType == .custom {
                                 customSortViewPresent = true
                             }
+                            if newValue == .homeScreen {
+                                // The search bar is hidden in this layout, so don't leave a filter applied.
+                                searchContext.query = ""
+                            }
                         }
-                        if sharedAppSortManager.appSortType == .custom {
+                        if sharedAppSortManager.appSortType.usesCustomOrder {
                             Divider()
                             
                             Button {
@@ -431,7 +465,13 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 Task { await installFromUrl(urlStr: installUrl.absoluteString) }
             }
         }
-        .searchable(text: $searchContext.query)
+        .apply { view in
+            if isHomeScreenLayout {
+                view
+            } else {
+                view.searchable(text: $searchContext.query)
+            }
+        }
 
     }
     

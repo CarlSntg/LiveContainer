@@ -141,7 +141,10 @@ struct LCCustomSortView: View {
             .compactMap { manager.getUniqueIdentifier(for: $0) }
         
         manager.customSortOrder = newCustomOrder
-        manager.appSortType = .custom
+        // Keep the home screen layout if it's active; it shares the same custom order.
+        if !manager.appSortType.usesCustomOrder {
+            manager.appSortType = .custom
+        }
         
         presentationMode.wrappedValue.dismiss()
     }

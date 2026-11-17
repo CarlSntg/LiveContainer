@@ -16,7 +16,13 @@ enum AppSortType: String, CaseIterable {
     case lastLaunched = "last_launched"
     case installationDate = "installationDate"
     case custom = "custom"
-    
+    case homeScreen = "home_screen"
+
+    /// Sort types whose order comes from the user-defined `customSortOrder`.
+    var usesCustomOrder: Bool {
+        return self == .custom || self == .homeScreen
+    }
+
     var displayName: String {
         switch self {
         case .defaultOrder:
@@ -31,6 +37,8 @@ enum AppSortType: String, CaseIterable {
             return "lc.appList.sort.installationDate".loc
         case .custom:
             return "lc.appList.sort.custom".loc
+        case .homeScreen:
+            return "lc.appList.sort.homeScreen".loc
         }
     }
     
@@ -52,6 +60,8 @@ enum AppSortType: String, CaseIterable {
             }
         case .custom:
             return "list.bullet"
+        case .homeScreen:
+            return "square.grid.2x2"
         }
     }
 }
@@ -78,6 +88,9 @@ class LCAppSortManager: ObservableObject {
     
     @Published var sortedApps : [LCAppModel] = []
     @Published var sortedHiddenApps : [LCAppModel] = []
+
+    /// The app currently being dragged in the home screen grid layout.
+    @Published var draggingApp : LCAppModel? = nil
     
     private var cancellables = Set<AnyCancellable>()
     // MARK: - Initialization
@@ -99,7 +112,7 @@ class LCAppSortManager: ObservableObject {
         
         $customSortOrder
             .sink { newValue in
-                if self.appSortType == .custom {
+                if self.appSortType.usesCustomOrder {
                     self.sortedApps = self.getSortedApps(DataManager.shared.model.apps, sortType: self.appSortType, customSortOrder: newValue)
                     if DataManager.shared.model.isHiddenAppUnlocked {
                         self.sortedHiddenApps = self.getSortedApps(DataManager.shared.model.hiddenApps, sortType: self.appSortType, customSortOrder: newValue)
@@ -171,9 +184,37 @@ class LCAppSortManager: ObservableObject {
             }
             
             return appsWithinstallationDate + appsWithoutInstallationDate
-        case .custom:
+        case .custom, .homeScreen:
             return sortByCustomOrder(appList, customSortOrder: customSortOrder)
         }
+    }
+
+    /// Moves `source` to the position currently held by `destination` and persists the new order.
+    /// Both apps must belong to the same list (visible or hidden).
+    func moveApp(_ source: LCAppModel, to destination: LCAppModel) {
+        guard source != destination,
+              let sourceId = getUniqueIdentifier(for: source),
+              let destinationId = getUniqueIdentifier(for: destination) else {
+            return
+        }
+        let sourceIsVisible = sortedApps.contains(source)
+        let destinationIsVisible = sortedApps.contains(destination)
+        guard sourceIsVisible == destinationIsVisible else {
+            return
+        }
+
+        // Build a complete order from what is on screen, keeping any other saved entries (e.g. locked hidden apps).
+        var order = (sortedApps + sortedHiddenApps).compactMap { getUniqueIdentifier(for: $0) }
+        for uniqueId in customSortOrder where !order.contains(uniqueId) {
+            order.append(uniqueId)
+        }
+
+        guard let fromIndex = order.firstIndex(of: sourceId),
+              let toIndex = order.firstIndex(of: destinationId) else {
+            return
+        }
+        order.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+        customSortOrder = order
     }
     
     private func sortByCustomOrder(_ appList: [LCAppModel], customSortOrder: [String]) -> [LCAppModel] {
