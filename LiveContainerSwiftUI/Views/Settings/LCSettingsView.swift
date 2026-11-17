@@ -229,6 +229,7 @@ struct LCSettingsView: View {
                     Toggle(isOn: $homeScreenHideSearch) {
                         Text("lc.settings.homeScreen.hideSearch".loc)
                     }
+                    LCWallpaperSettingsRows()
                 } header: {
                     Text("lc.settings.homeScreen".loc)
                 } footer: {

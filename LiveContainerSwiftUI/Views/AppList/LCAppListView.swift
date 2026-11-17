@@ -86,6 +86,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     @AppStorage("LCHomeScreenHideTitle", store: LCUtils.appGroupUserDefault) private var homeScreenHideTitle = true
     @AppStorage("LCHomeScreenAnchorBottom", store: LCUtils.appGroupUserDefault) private var homeScreenAnchorBottom = true
     @AppStorage("LCHomeScreenHideSearch", store: LCUtils.appGroupUserDefault) private var homeScreenHideSearch = true
+    @ObservedObject private var wallpaperStore = LCWallpaperStore.shared
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var isViewAppeared = false
     /// Visible height of the app list, used to anchor the home screen grid to the bottom.
@@ -101,6 +103,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     var hidesTitle: Bool { isHomeScreenLayout && homeScreenHideTitle }
     var anchorsToBottom: Bool { isHomeScreenLayout && homeScreenAnchorBottom }
     var hidesSearch: Bool { isHomeScreenLayout && homeScreenHideSearch }
+    /// A wallpaper is set (Settings > Home Screen) and shows behind the grid.
+    var showsWallpaper: Bool { isHomeScreenLayout && wallpaperStore.image != nil }
 
     var sortedApps: [LCAppModel] {
         return sharedAppSortManager.sortedApps
@@ -264,8 +268,17 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                         }
                     }
                 )
+                // Light text on the wallpaper, like the real home screen.
+                .environment(\.colorScheme, showsWallpaper ? .dark : colorScheme)
 
             }
+            .background(
+                Group {
+                    if showsWallpaper {
+                        LCWallpaperBackground()
+                    }
+                }
+            )
             .background(
                 GeometryReader { geometry in
                     Color.clear
