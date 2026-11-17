@@ -330,8 +330,21 @@ final class LCAppBannerViewController: UIViewController, UIContextMenuInteractio
         guard isIconStyle, iconView.window != nil else {
             return defaultPreview
         }
-        let target = UIDragPreviewTarget(container: iconView, center: iconView.iconImageView.center)
-        return defaultPreview.retargetedPreview(with: target)
+        // Use a standalone copy of the icon. A preview of the live iconImageView mirrors that view,
+        // and its cell is hidden (empty slot) during the drag, so the flying icon would be invisible.
+        let sourceImageView = iconView.iconImageView
+        let flyingIcon = UIImageView(image: sourceImageView.image)
+        flyingIcon.frame = sourceImageView.bounds
+        flyingIcon.contentMode = sourceImageView.contentMode
+        flyingIcon.layer.cornerRadius = sourceImageView.layer.cornerRadius
+        flyingIcon.layer.cornerCurve = .continuous
+        flyingIcon.clipsToBounds = true
+
+        let parameters = UIDragPreviewParameters()
+        parameters.visiblePath = iconView.iconPreviewPath
+        parameters.backgroundColor = .clear
+        let target = UIDragPreviewTarget(container: iconView, center: sourceImageView.center)
+        return UITargetedDragPreview(view: flyingIcon, parameters: parameters, target: target)
     }
 
     func dragInteraction(_ interaction: UIDragInteraction, item: UIDragItem, willAnimateCancelWith animator: UIDragAnimating) {
